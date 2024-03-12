@@ -1,3 +1,3 @@
 #!/bin/sh
 
-clang -Wall -Wextra -pedantic main.c -o board
+clang -Wall -Wextra -pedantic main.c -o sudoku

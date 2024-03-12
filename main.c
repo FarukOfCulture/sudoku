@@ -7,19 +7,20 @@
 
 // TODO: Multiple board on the same or seperate files
 // TODO: Make gui for all this
+// TODO: Use proper error handling istead of asserts
 
-char getcol(char x) { return x % 9; }
+char board_getcol(char x) { return x % 9; }
 
-char getrow(char x) { return x / 9; }
+char board_getrow(char x) { return x / 9; }
 
-char getnextavail(signed char x, char *board) {
+char board_getnext(signed char x, char *board) {
   bool arr[9] = {false};
-  for (signed char i = getcol(x); i < 81; i += 9) {
+  for (signed char i = board_getcol(x); i < 81; i += 9) {
     if (board[i] > 0) {
       arr[board[i] - 1] = true;
     }
   }
-  char row = getrow(x) * 9;
+  char row = board_getrow(x) * 9;
   for (signed char i = 0; i < 9; i++) {
     if (board[i + row] > 0) {
       arr[board[i + row] - 1] = true;
@@ -28,7 +29,8 @@ char getnextavail(signed char x, char *board) {
 
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      char a = board[(getrow(x) / 3 * 3 + i) * 9 + j + getcol(x) / 3 * 3];
+      char a = board[(board_getrow(x) / 3 * 3 + i) * 9 + j +
+                     board_getcol(x) / 3 * 3];
       if (a > 0) {
         arr[a - 1] = true;
       }
@@ -74,7 +76,7 @@ void board_from_file(char *file_name, char *board) {
   }
 }
 
-bool check_board(char *board, char *oboard) {
+bool board_check(char *board, char *oboard) {
   for (signed char i = 0; i < 81; i++) {
     if (oboard[i] != 0 && oboard[i] != board[i])
       return false;
@@ -82,7 +84,7 @@ bool check_board(char *board, char *oboard) {
 
   for (signed char x = 0; x < 9; x++) {
     bool arr[9] = {false};
-    for (signed char i = getcol(x); i < 81; i += 9) {
+    for (signed char i = board_getcol(x); i < 81; i += 9) {
       if (board[i] > 0) {
         arr[board[i] - 1] = true;
       }
@@ -94,7 +96,7 @@ bool check_board(char *board, char *oboard) {
   }
   for (signed char x = 0; x < 9; x++) {
     bool arr[9] = {false};
-    char row = getrow(x) * 9;
+    char row = board_getrow(x) * 9;
     for (signed char i = 0; i < 9; i++) {
       if (board[i + row] > 0) {
         arr[board[i + row] - 1] = true;
@@ -110,7 +112,8 @@ bool check_board(char *board, char *oboard) {
     bool arr[9] = {false};
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
-        char a = board[(getrow(x) / 3 * 3 + i) * 9 + j + getcol(x) / 3 * 3];
+        char a = board[(board_getrow(x) / 3 * 3 + i) * 9 + j +
+                       board_getcol(x) / 3 * 3];
         if (a > 0) {
           arr[a - 1] = true;
         }
@@ -124,6 +127,17 @@ bool check_board(char *board, char *oboard) {
   return true;
 }
 
+void board_print(char *board) {
+
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      printf("%i", board[i * 9 + j]);
+    }
+    printf("\n");
+  }
+  printf("\n");
+}
+
 // TODO: Implement usage()
 void usage(void) { assert(0 && "`usage()` is unimplemented!!"); }
 
@@ -134,7 +148,7 @@ int main(int argc, char **argv) {
   argv++;
   while (argc > 0) {
     if (**argv == '-') {
-      // TODO: Implement flags if needed
+      // NOTE: Implement flags if needed
     } else {
       file_name = *argv;
     }
@@ -151,42 +165,20 @@ int main(int argc, char **argv) {
   assert(oboard);
   board_from_file(file_name, oboard);
 
-  for (int i = 0; i < 9; i++) {
-    for (int j = 0; j < 9; j++) {
-      printf("%i", oboard[i * 9 + j]);
-    }
-    printf("\n");
-  }
-  printf("\n");
-
   char *board = malloc(sizeof(char[81]));
   assert(board);
   memcpy(board, oboard, sizeof(char[81]));
-  for (signed char i = 0; i < 81; i++) {
-    if (oboard[i] == 0) {
-      board[i] = getnextavail(i, board);
-      if (board[i] < 0) {
-        bool canpass = false;
-        while (!canpass) {
-          i--;
-          assert(i >= 0);
-          if (oboard[i] == 0) {
-            board[i] = getnextavail(i, board);
-            if (board[i] > 0) {
-              canpass = true;
-            }
-          }
-        }
-      }
+  int k = 1;
+  for (signed char i = 0; i < 81; i += k) {
+    if (oboard[i] != 0)
+      continue;
+    board[i] = board_getnext(i, board);
+    if ((board[i] > 0) != (k > 0)) {
+      k *= -1;
     }
   }
-  assert(check_board(board, oboard));
+  assert(board_check(board, oboard));
+  board_print(board);
 
-  for (int i = 0; i < 9; i++) {
-    for (int j = 0; j < 9; j++) {
-      printf("%i", board[i * 9 + j]);
-    }
-    printf("\n");
-  }
   return 0;
 }
